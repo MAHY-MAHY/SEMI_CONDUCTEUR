@@ -4,15 +4,17 @@
   !>TITRE         : Projet effet Landau
   !! @date          : 28/03/2019
   !> @author
-  !>Godfred AGYEKUM OHENEBA Vincent MAHY
+  !> Vincent MAHY Godfred AGYEKUM OHENEBA
 !! \section Présentation
-!! Le but de ce projet est de montrer la convergence à taux exponentielle d'un modèle de dérive diffusion.
-!!On s'appuiera sur des schémas de volumes finies explicite et semi implicite.
-
- 
-
-
-PROGRAM semi_cond
+!! Le but de ce projet est de mettre en evidence l'amortissement landau au cours du temps en discretisant soit par differences finies soit par une méthode semi Lagrangienne.
+PROGRAM MAIN
+  
+  ! DESCRIPTION:
+  !> Choisir Nx le nombre de point de points de la discretisation en x
+  !> Choisir Nv le nombre de point de points de la discretisation en v
+  !> Choisir  Tf le temps final
+  !> Choisir le choix de la méthode de resolution
+  !> Choisir 0.001<epsilon<0.1 et k
 
   use mod_var
 
@@ -24,8 +26,6 @@ PROGRAM semi_cond
 
   use Resolution
 
-  use init_semi
-
   use mod_allocations
 
   use mod_desallocations
@@ -33,8 +33,7 @@ PROGRAM semi_cond
   use mod_initialisation_syst_lin
 
   IMPLICIT NONE
-
-  REAL      :: Debut, Fin,choice3 
+  REAL      :: Debut, Fin
 
   Call cpu_time(Debut)
 
@@ -42,60 +41,44 @@ PROGRAM semi_cond
   !
   machep = MAX (EPSILON(machep), 1E-15_rp)
 
-  !  ! DESCRIPTION:
-  !> Choisir L le nombre de point de points de la discretisation en x
-  !>Choisir le schéma explicite ou semi implicite
-  !> Choisir Delta_T le pas en temps du schéma , Attention à la condition CFL pour le schéma explicite
-  !> Choisir  Tf le temps final
-  !> Choisir le cas test et les conditions initales
-  !> Choisir Le schéma
+  !
   ! lecture provisoire des dimensions
-  WRITE(6,*)"Entrez L"
-  READ(5,*) L
-  WRITE(6,*)"select 0 pour le schéma explicite, et 1 pour le schéma semi implicite"
-  READ(5,*)choice3
-  WRITE(6,*)"Entrez DELTAT T, Attention  à la condition si schéma explicite"
-  READ(5,*) DELTA_T
-  WRITE(6,*)"ENTREz le temps final"
+  WRITE(6,*)"Entrer Nx"
+  READ(5,*) Nx
+  WRITE(6,*)"Entrer Nv"
+  READ(5,*) Nv
+  WRITE(6,*)"ENTRER le temps final"
   READ(5,*) Tf
-  M=aint(Tf/DELTA_T)
-  WRITE(6,*)"M=",M
-  WRIte(6,*)"select 0 pour cas test 1 avec dopage en creneaux 5 pour cas test 2"
-  READ(5,*)choice
-  WRIte(6,*)"select 0 pour schéma centré 1 pour decentré amont 2 pour Scharfetter"
-  READ(5,*)choice2
-  
-  ! lecture de la donnéé initial
-  !print*,"donnéé initiale"
-  !read*,y_0	
-
-
+  WRITE(6,*) " taper 1 pour differences finies 2 pour semi lagrngien"
+  READ(5,*) choice
+  print*,"epsilon"
+  read*,eps
+  WRITE(6,*)"entrer k"
+  read(5,*)k
+  L=4._RP*PI
+  Vmax=10
+  hv=2._rp*Vmax/Nv
+  hx=L/Nx
+  WRITE(6,*)"hx=",hx,"hv=",hv
   ! Allocation des matrices
   CALL allocations ()
 
-  C=5   
-  ! Initialisation des tableaux globaux
-  call init_h()  
+  call init_h()
 
-  CALL init_n0_p0()
+  ! Initialisation des tableaux globaux
+  call init_f()
+
+  call init_B()
   
   CALL Init_A()
 
-  WRITE(6,*)"nl=",n_l,'nr=',n_r,'p_r=',p_r,'p_l=',p_l
-  if(choice3<1)then
-     CALL RES_P_N()
+  if(choice<2)then
+     call RES_F()
   ELSE
-     CALL RES_SEMI_IMP()
-  END if
-
+     call RES_SEMI_LAG()
+  END IF
   
-  CALL eqt()
-
   call  gnuplot()
-
-  !call Calc_E()
-
-  !call Calc_I()
 
   ! Desallocation des matrices
   CALL desallocations ()
@@ -106,4 +89,4 @@ PROGRAM semi_cond
 
 
   STOP
-END PROGRAM semi_cond
+END PROGRAM MAIN
